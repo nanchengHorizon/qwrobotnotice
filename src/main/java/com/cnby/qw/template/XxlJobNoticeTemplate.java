@@ -51,7 +51,7 @@ public class XxlJobNoticeTemplate implements NoticeTemplate<XxlJob> {
                 .append("\n");
 
         if (Objects.nonNull(result)) {
-            builder.append("> 通知信息：")
+            builder.append("> 通知信息：\n")
                     .append(result)
                     .append("\n");
         }
