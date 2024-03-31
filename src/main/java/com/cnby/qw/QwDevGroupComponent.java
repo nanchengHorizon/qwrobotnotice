@@ -84,7 +84,7 @@ public class QwDevGroupComponent {
         }
 
         StringBuilder builder = new StringBuilder();
-        builder.append("# !!警告" + qwNoticeConfig.getEnv() + "!!\n\n");
+        builder.append("# !!警告").append(qwNoticeConfig.getEnv()).append("!!\n\n");
         builder.append("> 请求方式：").append(requst.getMethod()).append("\n");
         builder.append("> 请求地址：").append(requst.getRequestURI()).append("\n");
         builder.append("> traceId：").append(MDC.get(qwNoticeConfig.getTraceIdName())).append("\n");
