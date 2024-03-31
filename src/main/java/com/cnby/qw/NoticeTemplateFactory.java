@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 @Slf4j
 public class NoticeTemplateFactory<T extends Annotation> implements BeanPostProcessor {
     private final Map<Class<T>, NoticeTemplate<T>> strategyMap = new ConcurrentHashMap<>();

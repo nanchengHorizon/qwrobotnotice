@@ -17,6 +17,7 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -25,10 +26,10 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Aspect
-@Component
 @RequiredArgsConstructor
 public class QwDevGroupNotificationAspect {
     private final QwDevGroupComponent qwDevGroupComponent;
@@ -65,9 +66,9 @@ public class QwDevGroupNotificationAspect {
         if (qwNotification.noticeBefore()) {
             this.noticeBefore(method, msgDto);
         }
-
+        Object proceed;
         try {
-            Object proceed = joinPoint.proceed();
+            proceed = joinPoint.proceed();
         } catch (Throwable ex) {
 
             // 异常通知
@@ -76,13 +77,11 @@ public class QwDevGroupNotificationAspect {
             }
 
             throw ex;
-        } finally {
+        }
 
-            // 成功通知
-            if (qwNotification.noticeRunning()) {
-                this.noticeRunning(method, msgDto);
-            }
-
+        // 成功通知
+        if (qwNotification.noticeRunning()) {
+            this.noticeRunning(method, msgDto, proceed);
         }
     }
 
@@ -93,6 +92,9 @@ public class QwDevGroupNotificationAspect {
             NoticeTemplate strategy = factory.getStrategy(annotationType);
             if (Objects.nonNull(strategy)) {
                 msg.append(strategy.getBeforeMsgHeader());
+                if (!CollectionUtils.isEmpty(msgDto.getMentioned_list())) {
+                    msg.append(this.getMarkdownNoticer(msgDto));
+                }
                 msg.append("> 环境：")
                         .append(qwNoticeConfig.getEnv())
                         .append("\n");
@@ -108,18 +110,17 @@ public class QwDevGroupNotificationAspect {
         qwDevGroupComponent.notificationGroup(msgDto);
     }
 
-    private void noticeRunning(Method method, WxRobotSendMsgDto msgDto) {
+    private void noticeRunning(Method method, WxRobotSendMsgDto msgDto, Object result) {
         String traceId = getTraceId();
-        if (MemoryCacheUtil.ERROR_CACHE.contains(traceId)) {
-            log.warn("已经推送了异常通知，无需通知完成消息");
-            return;
-        }
         StringBuilder msg = new StringBuilder();
         for (Annotation annotation : method.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             NoticeTemplate strategy = factory.getStrategy(annotationType);
             if (Objects.nonNull(strategy)) {
                 msg.append(strategy.getRunningMsgHeader());
+                if (!CollectionUtils.isEmpty(msgDto.getMentioned_list())) {
+                    msg.append(this.getMarkdownNoticer(msgDto));
+                }
                 msg.append("> 环境：")
                         .append(qwNoticeConfig.getEnv())
                         .append("\n");
@@ -132,7 +133,7 @@ public class QwDevGroupNotificationAspect {
                 msg.append("> traceId：")
                         .append(traceId)
                         .append("\n");
-                msg.append(strategy.getRunningMsg(method));
+                msg.append(strategy.getRunningMsg(method, result));
                 break;
             }
         }
@@ -151,6 +152,10 @@ public class QwDevGroupNotificationAspect {
             NoticeTemplate strategy = factory.getStrategy(annotationType);
             if (Objects.nonNull(strategy)) {
                 msg.append(strategy.getExceptionMsgHeader());
+                if (!CollectionUtils.isEmpty(msgDto.getMentioned_list())) {
+                    msg.append(this.getMarkdownNoticer(msgDto));
+                }
+
                 msg.append("> 环境：")
                         .append(qwNoticeConfig.getEnv())
                         .append("\n");
@@ -174,8 +179,6 @@ public class QwDevGroupNotificationAspect {
         msgDto.build(WxSendMarkdownContentDto.builder()
                 .content(msg.toString()).build());
         qwDevGroupComponent.notificationGroup(msgDto);
-        MemoryCacheUtil.ERROR_CACHE.put(traceId, traceId);
-
     }
 
     private WxRobotSendMsgDto assemblyNoticeInfo(QwNotification qwNotification) {
@@ -205,5 +208,16 @@ public class QwDevGroupNotificationAspect {
         return new BigDecimal(System.currentTimeMillis() + "")
                 .subtract(new BigDecimal(startTime.toString()))
                 .divide(new BigDecimal("1000"), 2, RoundingMode.HALF_UP).toString();
+    }
+
+    private String getMarkdownNoticer(WxRobotSendMsgDto msgDto) {
+        return msgDto.getMentioned_list().stream()
+                .map(e -> {
+                    if (e.startsWith("@")) {
+                        return "<" + e + ">";
+                    }
+                    return "<@" + e + ">";
+                })
+                .collect(Collectors.joining(" ")) + "\n";
     }
 }

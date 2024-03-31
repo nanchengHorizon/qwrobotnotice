@@ -35,14 +35,42 @@ public class QwDevGroupComponent {
             return;
         }
         try {
-            HttpRequest post = HttpUtil.createPost("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" + robotKey);
+            String url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" + robotKey;
+            HttpRequest post = HttpUtil.createPost(url);
             post.body(JSONObject.toJSONString(msgDto));
+            log.info("notificationGroup url={} body={}", url, JSONObject.toJSON(msgDto));
             HttpResponse execute = post.execute();
             String res = execute.body();
             log.info("notificationGroup 群机器人res={}", res);
         } catch (Exception e) {
             log.error("---------------------发送群机器人消息失败---------------------");
         }
+    }
+
+    public String notificationGroupThrow(WxRobotSendMsgDto msgDto, String robotKey) {
+        if (StringUtils.isBlank(robotKey)) {
+            log.error("robotKey is null");
+            return robotKey;
+        }
+        String res = "";
+        try {
+            String url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" + robotKey;
+            HttpRequest post = HttpUtil.createPost(url);
+            post.body(JSONObject.toJSONString(msgDto));
+            log.info("notificationGroup url={} body={}", url, JSONObject.toJSON(msgDto));
+            HttpResponse execute = post.execute();
+            res = execute.body();
+            log.info("notificationGroup 群机器人res={}", res);
+        } catch (Exception e) {
+            log.error("---------------------发送群机器人消息失败---------------------");
+        }
+
+        if (StringUtils.isBlank(res)) {
+            throw new RuntimeException( "请求企微失败");
+        } else if (!JSONObject.parseObject(res).getInteger("errcode").equals(0)) {
+            throw new RuntimeException( "发送到企微失败");
+        }
+        return res;
     }
 
     public void notificationGroup(List<String> notifyQwUserId, HttpServletRequest requst, Exception e) {

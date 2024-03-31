@@ -1,7 +1,10 @@
 package com.cnby.qw.template;
 
+import com.cnby.qw.dto.WxRobotSendMsgDto;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -41,7 +44,7 @@ public interface NoticeTemplate<T extends Annotation> {
      * @param method
      * @return
      */
-    String getRunningMsg(Method method);
+    String getRunningMsg(Method method, Object result);
 
     /**
      * 运行异常通知信息
@@ -57,12 +60,21 @@ public interface NoticeTemplate<T extends Annotation> {
      * @param ex
      * @return
      */
-    default String getExceptionMsg(Throwable ex) {
-        if (Objects.nonNull(ex.getStackTrace())) {
-            return "## 异常信息：\n" + Arrays.stream(ex.getStackTrace())
-                    .map(stackTraceElement -> "> " + stackTraceElement.toString() + "\n")
-                    .collect(Collectors.joining());
+    default StringBuilder getExceptionMsg(StringBuilder builder, Throwable ex) {
+        if (Objects.isNull(ex.getStackTrace())) {
+            return builder;
         }
-        return "";
+
+        builder.append("\n")
+                .append("## 异常信息：").append(ex.getMessage()).append("\n");
+        for (StackTraceElement stackTraceElement : ex.getStackTrace()) {
+            String msg = "> " + stackTraceElement.toString() + "\n";
+            if (builder.toString().getBytes(StandardCharsets.UTF_8).length + msg.getBytes(StandardCharsets.UTF_8).length > 2048) {
+                break;
+            }
+            builder.append(msg);
+        }
+
+        return builder;
     }
 }

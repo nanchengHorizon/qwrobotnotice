@@ -3,6 +3,7 @@ package com.cnby.qw.template;
 import com.xxl.job.core.handler.annotation.XxlJob;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 public class XxlJobNoticeTemplate implements NoticeTemplate<XxlJob> {
 
@@ -40,7 +41,7 @@ public class XxlJobNoticeTemplate implements NoticeTemplate<XxlJob> {
     }
 
     @Override
-    public String getRunningMsg(Method method) {
+    public String getRunningMsg(Method method, Object result) {
         StringBuilder builder = new StringBuilder();
         // xxlJob 定时任务
         XxlJob xxlJob = method.getDeclaredAnnotation(XxlJob.class);
@@ -48,6 +49,12 @@ public class XxlJobNoticeTemplate implements NoticeTemplate<XxlJob> {
         builder.append("> 任务名称：")
                 .append(jobName)
                 .append("\n");
+
+        if (Objects.nonNull(result)) {
+            builder.append("> 通知信息：")
+                    .append(result)
+                    .append("\n");
+        }
 
         return builder.toString();
     }
@@ -62,7 +69,6 @@ public class XxlJobNoticeTemplate implements NoticeTemplate<XxlJob> {
                 .append(jobName)
                 .append("\n");
 
-        builder.append(this.getExceptionMsg(ex));
-        return builder.toString();
+        return this.getExceptionMsg(builder,ex).toString();
     }
 }
