@@ -7,6 +7,7 @@
     <groupId>io.github.nanchenghorizon</groupId>
     <artifactId>qwrobotnotice</artifactId>
     <version>1.0.0</version>
+    <packaging>jar</packaging>
 
     <name>qwRobotNotice</name>
     <description>对特定注解拦截，可自定义消息通知企微机器人</description>
@@ -31,7 +32,7 @@
     <scm>
         <connection>scm:git:git://github.com/nanchengHorizon/qwrobotnotice.git</connection>
         <developerConnection>scm:git:ssh://github.com/nanchengHorizon/qwrobotnotice.git</developerConnection>
-        <url>https://github.com/nanchengHorizon/qwrobotnotice/tree/main</url>
+        <url>https://github.com/nanchengHorizon/qwrobotnotice/tree/master</url>
     </scm>
 
     <properties>
@@ -120,28 +121,18 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.4.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <tokenAuth>true</tokenAuth>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.2.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
-<!--                        <goals>-->
-<!--                            <goal>jar-no-fork</goal>-->
-<!--                        </goals>-->
-                        <configuration>
-                            <fork>false</fork>
-                        </configuration>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                        <!--                        <configuration>-->
+                        <!--                            <fork>false</fork>-->
+                        <!--                        </configuration>-->
                     </execution>
                 </executions>
             </plugin>
@@ -188,6 +179,16 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                </configuration>
             </plugin>
         </plugins>
     </build>
