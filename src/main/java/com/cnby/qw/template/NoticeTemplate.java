@@ -59,7 +59,7 @@ public interface NoticeTemplate<T extends Annotation> {
      */
     default String getExceptionMsg(Throwable ex) {
         if (Objects.nonNull(ex.getStackTrace())) {
-            return "## 异常信息：\n"+Arrays.stream(ex.getStackTrace())
+            return "## 异常信息：\n" + Arrays.stream(ex.getStackTrace())
                     .map(stackTraceElement -> "> " + stackTraceElement.toString() + "\n")
                     .collect(Collectors.joining());
         }

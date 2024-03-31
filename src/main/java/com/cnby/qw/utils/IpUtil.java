@@ -28,6 +28,7 @@ public class IpUtil {
         }
         return ip;
     }
+
     private static final String[] HEADERS_TO_TRY = {
             "X-Forwarded-For",
             "Proxy-Client-IP",
@@ -56,6 +57,7 @@ public class IpUtil {
         }
         return request.getRemoteAddr();
     }
+
     /***
      * 获取客户端ip地址(可以穿透代理)
      * @param request
@@ -98,6 +100,7 @@ public class IpUtil {
         }
         return ip;
     }
+
     public static String getIpAddr(HttpServletRequest request) {
         String ip = request.getHeader("X-Real-IP");
         if (null != ip && !"".equals(ip.trim())

@@ -1,7 +1,5 @@
 package com.cnby.qw.annotation;
 
-import cn.hutool.core.util.ArrayUtil;
-import com.cnby.qw.template.NoticeTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -27,7 +25,17 @@ public class QwTemplateScannerRegistrar implements ImportBeanDefinitionRegistrar
         AnnotationAttributes annoAttrs = AnnotationAttributes.fromMap(importingClassMetadata.getAnnotationAttributes(QwTemplateScan.class.getName()));
         QwClassPathScanner scanner = new QwClassPathScanner(registry);
         scanner.setResourceLoader(resourceLoader);
-        scanner.setTemplateClass(NoticeTemplate.class);
+
+        // 加载template模板类
+        Class<?> templateClass = annoAttrs.getClass("templateClass");
+        scanner.setTemplateClass(templateClass);
+        // 加载template工厂类
+        Class<?> factoryClass = annoAttrs.getClass("factoryClass");
+        scanner.setFactoryClass(factoryClass);
+        // 加载配置类
+        Class<?> configClass = annoAttrs.getClass("configClass");
+        scanner.setConfigClass(configClass);
+
         scanner.registerFilter();
 
         String[] basePackages = annoAttrs.getStringArray("basePackages");
@@ -36,10 +44,6 @@ public class QwTemplateScannerRegistrar implements ImportBeanDefinitionRegistrar
                 .filter(StringUtils::isNotBlank)
                 .toArray(String[]::new);
 
-        if (ArrayUtil.isEmpty(pks)) {
-            log.warn("QwTemplateScan 未指定包扫描路径");
-            return;
-        }
         scanner.doScan(pks);
     }
 }

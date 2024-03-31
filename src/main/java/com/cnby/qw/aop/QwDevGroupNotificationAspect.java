@@ -32,7 +32,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QwDevGroupNotificationAspect {
     private final QwDevGroupComponent qwDevGroupComponent;
-
     private final NoticeTemplateFactory factory;
     private final QwNoticeConfig qwNoticeConfig;
 
@@ -41,16 +40,11 @@ public class QwDevGroupNotificationAspect {
 
     }
 
-    //    @After("pointCut()")
-//    public void checkPerm(JoinPoint joinPoint) throws Throwable {
-//
-//    }
-
-    private static String getTraceId() {
-        String traceId = MDC.get(QwNoticeConfig.traceIdName);
+    private String getTraceId() {
+        String traceId = MDC.get(qwNoticeConfig.getTraceIdName());
         if (StringUtils.isBlank(traceId)) {
             traceId = UUID.randomUUID().toString().replace("-", "");
-            MDC.put(QwNoticeConfig.traceIdName, traceId);
+            MDC.put(qwNoticeConfig.getTraceIdName(), traceId);
         }
         return traceId;
     }
@@ -65,7 +59,7 @@ public class QwDevGroupNotificationAspect {
         // 计算执行时长
         String traceId = getTraceId();
         long l = System.currentTimeMillis();
-        MemoryCacheUtil.put(traceId, l);
+        MemoryCacheUtil.TIME_CACHE.put(traceId, l);
 
         // 前置通知
         if (qwNotification.noticeBefore()) {
@@ -115,6 +109,11 @@ public class QwDevGroupNotificationAspect {
     }
 
     private void noticeRunning(Method method, WxRobotSendMsgDto msgDto) {
+        String traceId = getTraceId();
+        if (MemoryCacheUtil.ERROR_CACHE.contains(traceId)) {
+            log.warn("已经推送了异常通知，无需通知完成消息");
+            return;
+        }
         StringBuilder msg = new StringBuilder();
         for (Annotation annotation : method.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
@@ -131,7 +130,7 @@ public class QwDevGroupNotificationAspect {
                             .append("\n");
                 }
                 msg.append("> traceId：")
-                        .append(getTraceId())
+                        .append(traceId)
                         .append("\n");
                 msg.append(strategy.getRunningMsg(method));
                 break;
@@ -144,6 +143,9 @@ public class QwDevGroupNotificationAspect {
 
     private void noticeException(Method method, WxRobotSendMsgDto msgDto, Throwable ex) {
         StringBuilder msg = new StringBuilder();
+        String traceId = getTraceId();
+        String methodName = method.getDeclaringClass().getName() + method.getName();
+        Integer count = MemoryCacheUtil.ERROR_TIMES_CACHE.getAntSet(methodName);
         for (Annotation annotation : method.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             NoticeTemplate strategy = factory.getStrategy(annotationType);
@@ -153,7 +155,10 @@ public class QwDevGroupNotificationAspect {
                         .append(qwNoticeConfig.getEnv())
                         .append("\n");
                 msg.append("> traceId：")
-                        .append(getTraceId())
+                        .append(traceId)
+                        .append("\n");
+                msg.append("> 一分钟内错误次数：")
+                        .append(count)
                         .append("\n");
                 String spendTime = computingTime();
 
@@ -169,6 +174,8 @@ public class QwDevGroupNotificationAspect {
         msgDto.build(WxSendMarkdownContentDto.builder()
                 .content(msg.toString()).build());
         qwDevGroupComponent.notificationGroup(msgDto);
+        MemoryCacheUtil.ERROR_CACHE.put(traceId, traceId);
+
     }
 
     private WxRobotSendMsgDto assemblyNoticeInfo(QwNotification qwNotification) {
@@ -185,12 +192,12 @@ public class QwDevGroupNotificationAspect {
      * @return
      */
     private String computingTime() {
-        String traceId = MDC.get(QwNoticeConfig.traceIdName);
+        String traceId = MDC.get(qwNoticeConfig.getTraceIdName());
         if (StringUtils.isBlank(traceId)) {
             return "";
         }
 
-        Object startTime = MemoryCacheUtil.get(traceId);
+        Object startTime = MemoryCacheUtil.TIME_CACHE.get(traceId);
         if (Objects.isNull(startTime)) {
             return "";
         }

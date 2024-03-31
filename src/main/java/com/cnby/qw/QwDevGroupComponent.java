@@ -59,7 +59,7 @@ public class QwDevGroupComponent {
         builder.append("# !!警告" + qwNoticeConfig.getEnv() + "!!\n\n");
         builder.append("> 请求方式：").append(requst.getMethod()).append("\n");
         builder.append("> 请求地址：").append(requst.getRequestURI()).append("\n");
-        builder.append("> traceId：").append(MDC.get(QwNoticeConfig.traceIdName)).append("\n");
+        builder.append("> traceId：").append(MDC.get(qwNoticeConfig.getTraceIdName())).append("\n");
         builder.append("> 异常信息：").append(e).append("\n");
 
         WxRobotSendMsgDto msgDto = WxRobotSendMsgDto.builder()
